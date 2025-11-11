@@ -1,3 +1,4 @@
+import { Camera, CameraType } from 'expo-camera';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -25,7 +26,14 @@ const Home = () => {
   const [isActive, setIsActive] = useState(false);
 
   // Camera hook
-  const { hasPermission, isLoading, takePicture } = useCamera();
+  const {
+    hasPermission,
+    isLoading,
+    isCameraReady,
+    cameraRef,
+    takePicture,
+    onCameraReady,
+  } = useCamera();
 
   // Prepare upload data
   const uploadData: UploadData = {
@@ -62,6 +70,15 @@ const Home = () => {
     }
 
     if (!isActive) {
+      // Check if camera is ready
+      if (!isCameraReady) {
+        Alert.alert(
+          'Camera Not Ready',
+          'Please wait for the camera to initialize',
+        );
+        return;
+      }
+
       // Validate form before starting
       if (!orderNumber || !warehouseId || !operator) {
         Alert.alert(
@@ -86,6 +103,14 @@ const Home = () => {
       Alert.alert(
         'Permission Required',
         'Camera permission is required to use this feature',
+      );
+      return;
+    }
+
+    if (!isCameraReady) {
+      Alert.alert(
+        'Camera Not Ready',
+        'Please wait for the camera to initialize',
       );
       return;
     }
@@ -145,6 +170,16 @@ const Home = () => {
       />
       <ScrollView className="flex-1 bg-white">
         <View className="p-4">
+          {/* Hidden Camera Component for automatic capture */}
+          <View className="absolute right-2 top-2 h-1 w-1 overflow-hidden opacity-0">
+            <Camera
+              ref={cameraRef}
+              style={{ width: 1, height: 1 }}
+              type={CameraType.back}
+              onCameraReady={onCameraReady}
+            />
+          </View>
+
           {/* Status Section */}
           <View className="mb-6 rounded-lg bg-gray-100 p-4">
             <View className="mb-2 flex-row items-center justify-between">
@@ -161,6 +196,11 @@ const Home = () => {
             {isActive && (
               <Text className="text-sm text-gray-600">
                 Next capture in: {nextCaptureIn} seconds
+              </Text>
+            )}
+            {!isCameraReady && (
+              <Text className="text-xs text-yellow-600">
+                Camera initializing...
               </Text>
             )}
           </View>

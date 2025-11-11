@@ -1,10 +1,11 @@
 import { Camera } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export const useCamera = () => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  const cameraRef = useRef<Camera>(null);
 
   useEffect(() => {
     (async () => {
@@ -19,20 +20,20 @@ export const useCamera = () => {
       return null;
     }
 
+    if (!isCameraReady || !cameraRef.current) {
+      console.error('Camera not ready');
+      return null;
+    }
+
     try {
       setIsLoading(true);
 
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      const photo = await cameraRef.current.takePictureAsync({
         quality: 0.8,
-        allowsEditing: false,
+        skipProcessing: false,
       });
 
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        return result.assets[0].uri;
-      }
-
-      return null;
+      return photo.uri;
     } catch (error) {
       console.error('Error taking picture:', error);
       return null;
@@ -41,9 +42,16 @@ export const useCamera = () => {
     }
   };
 
+  const onCameraReady = () => {
+    setIsCameraReady(true);
+  };
+
   return {
     hasPermission,
     isLoading,
+    isCameraReady,
+    cameraRef,
     takePicture,
+    onCameraReady,
   };
 };
