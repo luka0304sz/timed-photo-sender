@@ -185,12 +185,10 @@ const Home = () => {
             <View className="mb-2 flex-row items-center justify-between">
               <Text className="text-lg font-bold">Status</Text>
               <View className="flex-row items-center">
-                <Text className="mr-2">{isActive ? 'Active' : 'Inactive'}</Text>
-                <Switch
-                  value={isActive}
-                  onValueChange={handleToggleActive}
-                  disabled={isLoading}
-                />
+                <Text className="mr-2 font-semibold">
+                  {isActive ? '🟢 Active' : '⚫ Inactive'}
+                </Text>
+                <Switch value={isActive} onValueChange={handleToggleActive} />
               </View>
             </View>
             {isActive && (

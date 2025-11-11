@@ -29,6 +29,16 @@ export const useTimedCapture = ({
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Use ref to store uploadData to avoid recreating captureAndUpload on every render
+  const uploadDataRef = useRef(uploadData);
+  const apiUrlRef = useRef(apiUrl);
+
+  // Update refs when values change
+  useEffect(() => {
+    uploadDataRef.current = uploadData;
+    apiUrlRef.current = apiUrl;
+  }, [uploadData, apiUrl]);
+
   const captureAndUpload = useCallback(async () => {
     try {
       const imageUri = await onCapture();
@@ -43,7 +53,11 @@ export const useTimedCapture = ({
         return;
       }
 
-      const result = await uploadPhoto(imageUri, uploadData, apiUrl);
+      const result = await uploadPhoto(
+        imageUri,
+        uploadDataRef.current,
+        apiUrlRef.current,
+      );
 
       setUploadHistory((prev) => [
         ...prev,
@@ -67,7 +81,7 @@ export const useTimedCapture = ({
         { timestamp: new Date(), success: false, message: errorMsg },
       ]);
     }
-  }, [onCapture, uploadData, apiUrl, onUploadSuccess, onUploadError]);
+  }, [onCapture, onUploadSuccess, onUploadError]);
 
   useEffect(() => {
     // Clear existing intervals
@@ -81,6 +95,8 @@ export const useTimedCapture = ({
     }
 
     if (isActive && intervalSeconds > 0) {
+      console.log(`Starting timer with ${intervalSeconds} second interval`);
+
       // Set initial countdown
       setNextCaptureIn(intervalSeconds);
 
@@ -96,13 +112,16 @@ export const useTimedCapture = ({
 
       // Start capture interval
       intervalRef.current = setInterval(() => {
+        console.log('Interval trigger: capturing photo');
         captureAndUpload();
       }, intervalSeconds * 1000);
 
       // Immediate first capture
+      console.log('Taking first photo immediately');
       captureAndUpload();
     } else {
       setNextCaptureIn(0);
+      console.log('Timer stopped');
     }
 
     return () => {
