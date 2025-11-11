@@ -15,14 +15,18 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.reactnativeboilerplate"
+      "bundleIdentifier": "com.anonymous.reactnativeboilerplate",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to capture and upload photos at timed intervals."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.reactnativeboilerplate"
+      "package": "com.anonymous.reactnativeboilerplate",
+      "permissions": ["CAMERA"]
     },
     "web": {
       "favicon": "./assets/favicon.png",
