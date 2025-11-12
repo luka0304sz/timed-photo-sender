@@ -1,5 +1,5 @@
 import { Camera } from 'expo-camera';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const useCamera = () => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -14,7 +14,7 @@ export const useCamera = () => {
     })();
   }, []);
 
-  const takePicture = async (): Promise<string | null> => {
+  const takePicture = useCallback(async (): Promise<string | null> => {
     if (!hasPermission) {
       console.error('[Camera] Permission not granted');
       return null;
@@ -58,12 +58,12 @@ export const useCamera = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [hasPermission, isCameraReady]);
 
-  const onCameraReady = () => {
+  const onCameraReady = useCallback(() => {
     console.log('[Camera] Camera is ready!');
     setIsCameraReady(true);
-  };
+  }, []);
 
   return {
     hasPermission,

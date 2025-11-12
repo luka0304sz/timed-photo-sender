@@ -1,6 +1,6 @@
 import { Camera, CameraType } from 'expo-camera';
 import { Stack } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -46,6 +46,16 @@ const Home = () => {
     [orderNumber, warehouseId, operator, notes],
   );
 
+  // CRITICAL: useCallback for callbacks to prevent timer restarts
+  const handleUploadSuccess = useCallback((message: string) => {
+    console.log('Upload success:', message);
+  }, []);
+
+  const handleUploadError = useCallback((error: string) => {
+    console.error('Upload error:', error);
+    Alert.alert('Upload Error', error);
+  }, []);
+
   // Timed capture hook
   const { uploadHistory, nextCaptureIn, clearHistory, manualCapture } =
     useTimedCapture({
@@ -54,13 +64,8 @@ const Home = () => {
       apiUrl,
       uploadData,
       onCapture: takePicture,
-      onUploadSuccess: (message) => {
-        console.log('Upload success:', message);
-      },
-      onUploadError: (error) => {
-        console.error('Upload error:', error);
-        Alert.alert('Upload Error', error);
-      },
+      onUploadSuccess: handleUploadSuccess,
+      onUploadError: handleUploadError,
     });
 
   const handleToggleActive = () => {
