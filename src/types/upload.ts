@@ -1,8 +1,9 @@
-export interface UploadData {
-  orderNumber: string;
-  warehouseId: string;
-  operator: string;
-  notes?: string;
+// Dynamic key-value pairs for upload metadata
+export type UploadData = Record<string, string>;
+
+export interface KeyValuePair {
+  key: string;
+  value: string;
 }
 
 export interface PhotoUploadConfig {

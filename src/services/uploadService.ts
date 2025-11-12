@@ -25,10 +25,7 @@ export const uploadPhoto = async (
       );
       console.log('[Upload] Request details:', {
         url: apiUrl,
-        orderNumber: uploadData.orderNumber,
-        warehouseId: uploadData.warehouseId,
-        operator: uploadData.operator,
-        notes: uploadData.notes || 'none',
+        metadata: uploadData,
         imageUri: `${imageUri.substring(0, 50)}...`,
       });
 
@@ -45,13 +42,13 @@ export const uploadPhoto = async (
       } as any;
 
       formData.append('image', imageFile);
-      formData.append('orderNumber', uploadData.orderNumber);
-      formData.append('warehouseId', uploadData.warehouseId);
-      formData.append('operator', uploadData.operator);
 
-      if (uploadData.notes) {
-        formData.append('notes', uploadData.notes);
-      }
+      // Append all dynamic key-value pairs
+      Object.entries(uploadData).forEach(([key, value]) => {
+        if (value) {
+          formData.append(key, value);
+        }
+      });
 
       const startTime = Date.now();
 
