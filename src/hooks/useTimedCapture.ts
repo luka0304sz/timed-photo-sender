@@ -33,6 +33,10 @@ export const useTimedCapture = ({
   const uploadDataRef = useRef(uploadData);
   const apiUrlRef = useRef(apiUrl);
 
+  // Date-based timing to fix Android setInterval issues
+  const nextCaptureTimeRef = useRef<number>(0);
+  const lastCaptureTimeRef = useRef<number>(0);
+
   // Update refs when values change
   useEffect(() => {
     uploadDataRef.current = uploadData;
@@ -95,33 +99,69 @@ export const useTimedCapture = ({
     }
 
     if (isActive && intervalSeconds > 0) {
-      console.log(`Starting timer with ${intervalSeconds} second interval`);
+      const intervalMs = intervalSeconds * 1000;
+      const now = Date.now();
+
+      console.log(
+        `[Timer] Starting with ${intervalSeconds}s interval (${intervalMs}ms)`,
+      );
+      console.log('[Timer] Current time:', new Date(now).toISOString());
 
       // Set initial countdown
       setNextCaptureIn(intervalSeconds);
 
-      // Start countdown
-      countdownRef.current = setInterval(() => {
-        setNextCaptureIn((prev) => {
-          if (prev <= 1) {
-            return intervalSeconds;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      // Set next capture time
+      nextCaptureTimeRef.current = now + intervalMs;
+      lastCaptureTimeRef.current = now;
 
-      // Start capture interval
+      // Start countdown - check every 100ms for accuracy
+      countdownRef.current = setInterval(() => {
+        const currentTime = Date.now();
+        const timeUntilNextCapture = nextCaptureTimeRef.current - currentTime;
+        const secondsRemaining = Math.ceil(timeUntilNextCapture / 1000);
+
+        setNextCaptureIn(secondsRemaining > 0 ? secondsRemaining : 0);
+
+        // Log countdown every 5 seconds
+        if (secondsRemaining % 5 === 0 && secondsRemaining > 0) {
+          console.log(
+            `[Timer] Countdown: ${secondsRemaining}s remaining (actual: ${Math.round(
+              timeUntilNextCapture,
+            )}ms)`,
+          );
+        }
+      }, 100); // Check every 100ms for smoother countdown
+
+      // Check for capture trigger every 500ms using Date-based validation
       intervalRef.current = setInterval(() => {
-        console.log('Interval trigger: capturing photo');
-        captureAndUpload();
-      }, intervalSeconds * 1000);
+        const currentTime = Date.now();
+        const timeSinceLastCapture = currentTime - lastCaptureTimeRef.current;
+
+        // Only trigger if enough time has actually passed (with 100ms tolerance)
+        if (timeSinceLastCapture >= intervalMs - 100) {
+          console.log('[Timer] Trigger detected:', {
+            intervalMs,
+            timeSinceLastCapture: `${timeSinceLastCapture}ms`,
+            expectedTime: new Date(nextCaptureTimeRef.current).toISOString(),
+            actualTime: new Date(currentTime).toISOString(),
+            drift: `${currentTime - nextCaptureTimeRef.current}ms`,
+          });
+
+          // Update timing references
+          lastCaptureTimeRef.current = currentTime;
+          nextCaptureTimeRef.current = currentTime + intervalMs;
+
+          console.log('[Timer] Capturing photo...');
+          captureAndUpload();
+        }
+      }, 500); // Check every 500ms
 
       // Immediate first capture
-      console.log('Taking first photo immediately');
+      console.log('[Timer] Taking first photo immediately');
       captureAndUpload();
     } else {
       setNextCaptureIn(0);
-      console.log('Timer stopped');
+      console.log('[Timer] Stopped');
     }
 
     return () => {
