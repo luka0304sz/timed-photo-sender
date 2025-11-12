@@ -1,6 +1,6 @@
 import { Camera, CameraType } from 'expo-camera';
 import { Stack } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -35,13 +35,16 @@ const Home = () => {
     onCameraReady,
   } = useCamera();
 
-  // Prepare upload data
-  const uploadData: UploadData = {
-    orderNumber,
-    warehouseId,
-    operator,
-    notes: notes || undefined,
-  };
+  // Prepare upload data - CRITICAL: use useMemo to prevent recreation on every render
+  const uploadData: UploadData = useMemo(
+    () => ({
+      orderNumber,
+      warehouseId,
+      operator,
+      notes: notes || undefined,
+    }),
+    [orderNumber, warehouseId, operator, notes],
+  );
 
   // Timed capture hook
   const { uploadHistory, nextCaptureIn, clearHistory, manualCapture } =
