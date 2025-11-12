@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
+  Image,
   ScrollView,
   Switch,
   Text,
@@ -24,6 +25,7 @@ const Home = () => {
   const [notes, setNotes] = useState('');
   const [intervalSeconds, setIntervalSeconds] = useState('60');
   const [isActive, setIsActive] = useState(false);
+  const [showCameraPreview, setShowCameraPreview] = useState(false);
 
   // Camera hook
   const {
@@ -57,16 +59,23 @@ const Home = () => {
   }, []);
 
   // Timed capture hook
-  const { uploadHistory, nextCaptureIn, clearHistory, manualCapture } =
-    useTimedCapture({
-      intervalSeconds: parseInt(intervalSeconds, 10) || 60,
-      isActive,
-      apiUrl,
-      uploadData,
-      onCapture: takePicture,
-      onUploadSuccess: handleUploadSuccess,
-      onUploadError: handleUploadError,
-    });
+  const {
+    uploadHistory,
+    nextCaptureIn,
+    lastPhotoUri,
+    lastServerResponse,
+    lastResponseTime,
+    clearHistory,
+    manualCapture,
+  } = useTimedCapture({
+    intervalSeconds: parseInt(intervalSeconds, 10) || 60,
+    isActive,
+    apiUrl,
+    uploadData,
+    onCapture: takePicture,
+    onUploadSuccess: handleUploadSuccess,
+    onUploadError: handleUploadError,
+  });
 
   const handleToggleActive = () => {
     if (!hasPermission) {
@@ -178,15 +187,38 @@ const Home = () => {
       />
       <ScrollView className="flex-1 bg-white">
         <View className="p-4">
-          {/* Hidden Camera Component for automatic capture */}
-          <View className="absolute right-2 top-2 h-1 w-1 overflow-hidden opacity-0">
-            <Camera
-              ref={cameraRef}
-              style={{ width: 1, height: 1 }}
-              type={CameraType.back}
-              onCameraReady={onCameraReady}
-            />
-          </View>
+          {/* Camera Preview - Hidden by default, visible when toggled */}
+          {showCameraPreview ? (
+            <View className="mb-4 overflow-hidden rounded-lg">
+              <Camera
+                ref={cameraRef}
+                style={{ width: '100%', height: 400 }}
+                type={CameraType.back}
+                onCameraReady={onCameraReady}
+              />
+            </View>
+          ) : (
+            <View className="absolute right-2 top-2 h-1 w-1 overflow-hidden opacity-0">
+              <Camera
+                ref={cameraRef}
+                style={{ width: 1, height: 1 }}
+                type={CameraType.back}
+                onCameraReady={onCameraReady}
+              />
+            </View>
+          )}
+
+          {/* Camera Preview Toggle Button */}
+          <TouchableOpacity
+            className="mb-4 rounded-lg bg-gray-600 p-3"
+            onPress={() => setShowCameraPreview(!showCameraPreview)}
+          >
+            <Text className="text-center font-bold text-white">
+              {showCameraPreview
+                ? '📷 Ukryj podgląd kamery'
+                : '📷 Pokaż podgląd kamery'}
+            </Text>
+          </TouchableOpacity>
 
           {/* Status Section */}
           <View className="mb-6 rounded-lg bg-gray-100 p-4">
@@ -288,6 +320,52 @@ const Home = () => {
               {isLoading ? 'Processing...' : 'Manual Capture & Upload'}
             </Text>
           </TouchableOpacity>
+
+          {/* Last Photo and Server Response Section */}
+          {lastPhotoUri && (
+            <View className="mb-6 rounded-lg bg-gray-100 p-4">
+              <Text className="mb-3 text-lg font-bold">
+                Ostatnie zdjęcie i odpowiedź
+              </Text>
+
+              {/* Last Photo Preview */}
+              <View className="mb-3">
+                <Text className="mb-2 text-sm font-semibold">
+                  Ostatnie wysłane zdjęcie:
+                </Text>
+                <Image
+                  source={{ uri: lastPhotoUri }}
+                  style={{ width: 120, height: 120 }}
+                  className="rounded"
+                  resizeMode="cover"
+                />
+              </View>
+
+              {/* Server Response */}
+              {lastServerResponse && (
+                <View className="mb-3">
+                  <Text className="mb-2 text-sm font-semibold">
+                    Odpowiedź serwera:
+                  </Text>
+                  <View className="rounded bg-white p-2">
+                    <Text className="font-mono text-xs text-gray-700">
+                      {JSON.stringify(lastServerResponse, null, 2)}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Response Time */}
+              {lastResponseTime !== null && (
+                <View>
+                  <Text className="text-sm">
+                    <Text className="font-semibold">Czas odpowiedzi: </Text>
+                    <Text className="text-green-700">{lastResponseTime}ms</Text>
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
 
           {/* Upload History */}
           <View className="mb-6">

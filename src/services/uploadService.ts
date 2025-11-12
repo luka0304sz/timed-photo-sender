@@ -75,6 +75,8 @@ export const uploadPhoto = async (
       return {
         success: true,
         message: response.data?.message || 'Upload successful',
+        responseTime: duration,
+        responseData: response.data,
       };
     } catch (error) {
       lastError = error as Error;

@@ -14,4 +14,6 @@ export interface PhotoUploadConfig {
 export interface UploadResponse {
   success: boolean;
   message?: string;
+  responseTime?: number; // Time in milliseconds from request to response
+  responseData?: any; // Full server response data
 }

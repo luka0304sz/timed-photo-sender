@@ -26,6 +26,9 @@ export const useTimedCapture = ({
     Array<{ timestamp: Date; success: boolean; message: string }>
   >([]);
   const [nextCaptureIn, setNextCaptureIn] = useState<number>(0);
+  const [lastPhotoUri, setLastPhotoUri] = useState<string | null>(null);
+  const [lastServerResponse, setLastServerResponse] = useState<any>(null);
+  const [lastResponseTime, setLastResponseTime] = useState<number | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -57,11 +60,18 @@ export const useTimedCapture = ({
         return;
       }
 
+      // Store the photo URI
+      setLastPhotoUri(imageUri);
+
       const result = await uploadPhoto(
         imageUri,
         uploadDataRef.current,
         apiUrlRef.current,
       );
+
+      // Store server response and timing
+      setLastServerResponse(result.responseData);
+      setLastResponseTime(result.responseTime || null);
 
       setUploadHistory((prev) => [
         ...prev,
@@ -181,6 +191,9 @@ export const useTimedCapture = ({
   return {
     uploadHistory,
     nextCaptureIn,
+    lastPhotoUri,
+    lastServerResponse,
+    lastResponseTime,
     clearHistory,
     manualCapture: captureAndUpload,
   };
